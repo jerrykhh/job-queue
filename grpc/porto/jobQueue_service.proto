@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package pb;
+
+import "jobQueue.proto";
+
+option go_package = "github.com/jerrykhh/job-queue/grpc/pb";
+
+
+service JobQueueService {
+    rpc Start (JobQueueRequest) returns (JobQueue);
+    rpc Pause (JobQueueRequest) returns (JobQueue);
+    rpc Create (JobQueue) returns (CreateJobQueueResponse);
+    rpc List (JobQueueRequest) returns (stream ListJobResponse);
+    rpc Enqueue (EnqueueRequest) returns (EnqueueResponse);
+    rpc Dequeue (JobQueueRequest) returns (DequeueResponse);
+    rpc Remove (JobQueueRequest) returns (JobQueue);
+    rpc RemoveJob (JobRequest) returns (Job);
+}
+
+message JobQueueRequest {
+    string queue_id = 1;
+}
+
+message JobRequest {
+    string job_id = 1;
+}
+
+message CreateJobQueueResponse {
+    string queue_id = 1;
+    JobQueue job_queue = 2;
+}
+
+message ListJobResponse {
+    Job job = 1; 
+}
+
+message EnqueueRequest {
+    string queue_id = 1;
+    Job job = 2;
+}
+
+message EnqueueResponse {
+    string queue_id = 1;
+    string job_id = 2;
+    Job job = 3;
+}
+
+message DequeueResponse {
+    repeated Job items = 1;
+}
+

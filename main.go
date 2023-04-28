@@ -1,34 +1,43 @@
 package main
 
 import (
-	"cron-queue/queue"
 	"fmt"
-	"time"
+	"log"
+	"net"
 
-	"github.com/redis/go-redis/v9"
+	pb "github.com/jerrykhh/job-queue/grpc/pb"
+	"github.com/jerrykhh/job-queue/server"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	rdb := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
-	})
-
-	q := map[string]*queue.CronQueue{}
-	q["Test1"] = queue.NewCronQueue("Test1", rdb, 1*time.Second, 0, 3)
-	// q["Test2"] = queue.NewCronQueue("Test2", rdb, 1*time.Second, 0, 3)
-	// q["Test3"] = queue.NewCronQueue("Test3", rdb, 3*time.Second, 0, 3)
-	for _, v := range q {
-		v.Start()
+	config, err := server.LoadConfig(".")
+	if err != nil {
+		fmt.Println("load config file failed")
+		log.Fatalln(err)
 	}
-	fmt.Println("Enqueue")
-	q["Test1"].Enqueue(queue.NewCron("test1", 1))
-	q["Test1"].Enqueue(queue.NewCron("test2", 1))
-	q["Test1"].Enqueue(queue.NewCron("test23", 1))
-	q["Test1"].Enqueue(queue.NewCron("test3", 1))
-	q["Test1"].Enqueue(queue.NewCron("test4", 1))
-	q["Test1"].Enqueue(queue.NewCron("test5", 1))
-	q["Test1"].Enqueue(queue.NewCron("test6", -19))
-	fmt.Println("Enqueue finish")
+	runGrpcServer(config)
+}
 
-	select {}
+func runGrpcServer(config server.Config) {
+	serv, err := server.NewServer(config)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// gprcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
+	grpcServer := grpc.NewServer()
+	pb.RegisterJobQueueServiceServer(grpcServer, serv)
+	reflection.Register(grpcServer)
+	listener, err := net.Listen("tcp", config.GRPCServerAddress)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Printf("start gRPC server at %s\n", listener.Addr().String())
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		fmt.Println(err)
+	}
 }

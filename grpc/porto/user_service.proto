@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package pb;
+
+import "user.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/jerrykhh/job-queue/grpc/pb";
+
+
+service UserService {
+    rpc Login (User) returns (LoginResponse);
+}
+
+message LoginResponse {
+    string username = 1;
+    string access_token = 2;
+    string refresh_token = 3;
+    google.protobuf.Timestamp access_token_exp_at = 5;
+    google.protobuf.Timestamp refresh_token_exp_at = 6;
+}
