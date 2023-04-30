@@ -14,7 +14,7 @@ type Server struct {
 	config      Config
 	jwtCreator  *jwt.JWTCreator
 	rootHashPwd string
-	queues      map[string]server_queue.JobQueue
+	queues      map[string]*server_queue.JobQueue
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -37,6 +37,16 @@ func NewServer(config Config) (*Server, error) {
 	}
 
 	serv.rootHashPwd = hashPwd
+	serv.queues = make(map[string]*server_queue.JobQueue)
 	return serv, nil
 
+}
+
+func (server *Server) NewJobQueue(name string, runEverySec, seed, dequeueCount int) (*server_queue.JobQueue, error) {
+	newQueue, err := server_queue.NewJobQueue(name, runEverySec, seed, dequeueCount)
+	if err != nil {
+		return nil, err
+	}
+	server.queues[newQueue.Id] = newQueue
+	return newQueue, nil
 }

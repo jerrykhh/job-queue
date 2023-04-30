@@ -28,6 +28,7 @@ func runGrpcServer(config server.Config) {
 
 	// gprcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
 	grpcServer := grpc.NewServer()
+	pb.RegisterJobQueueServiceServer(grpcServer, serv)
 	pb.RegisterUserServiceServer(grpcServer, serv)
 	reflection.Register(grpcServer)
 	listener, err := net.Listen("tcp", config.GRPCServerAddress)
