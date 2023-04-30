@@ -2,13 +2,19 @@ package server
 
 import (
 	"github.com/jerrykhh/job-queue/grpc/pb"
+	server_queue "github.com/jerrykhh/job-queue/server/queue"
 	"github.com/jerrykhh/job-queue/server/utils/jwt"
+	"github.com/jerrykhh/job-queue/server/utils/pwd"
 )
 
 type Server struct {
 	pb.UnimplementedJobQueueServiceServer
-	config     Config
-	jwtCreator *jwt.JWTCreator
+	pb.UserServiceServer
+
+	config      Config
+	jwtCreator  *jwt.JWTCreator
+	rootHashPwd string
+	queues      map[string]server_queue.JobQueue
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -19,9 +25,18 @@ func NewServer(config Config) (*Server, error) {
 		return nil, err
 	}
 
-	return &Server{
+	serv := &Server{
 		config:     config,
 		jwtCreator: jwtTokenCreator,
-	}, nil
+	}
+
+	hashPwd, err := pwd.HashPassword(config.RootPwd)
+
+	if err != nil {
+		return nil, err
+	}
+
+	serv.rootHashPwd = hashPwd
+	return serv, nil
 
 }

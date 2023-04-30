@@ -21,12 +21,11 @@ func NewJWTCreator(secretKey string) (*JWTCreator, error) {
 	return &JWTCreator{secretKey}, nil
 }
 
-func (jwtCreator *JWTCreator) CreateToken(username string, duration time.Duration) (string, jwt.MapClaims, error) {
+func (jwtCreator *JWTCreator) CreateToken(username string, duration time.Duration) (string, *Payload, error) {
 
-	payload := jwt.MapClaims{
-		"sub": username,
-		"iat": time.Now(),
-		"exp": time.Now().Add(duration),
+	payload, err := NewPayload(username, duration)
+	if err != nil {
+		return "", nil, err
 	}
 
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
@@ -47,7 +46,7 @@ func (jwtCreator *JWTCreator) VerifyToken(token string) (jwt.Claims, error) {
 		return nil, err
 	}
 
-	if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok && parsedToken.Valid {
+	if claims, ok := parsedToken.Claims.(Payload); ok && parsedToken.Valid {
 		return claims, nil
 	}
 
