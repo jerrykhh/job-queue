@@ -26,7 +26,7 @@ type JobQueue struct {
 	Redis           *redis.Client
 }
 
-func NewJobQueue(name string, runEverySec, seed, dequeueCount int, redisAddr string, redisPort int) (*JobQueue, error) {
+func NewJobQueue(name string, runEverySec, seed, dequeueCount int, redis *redis.Client) (*JobQueue, error) {
 	id, err := uuid.NewRandom()
 	if err != nil {
 		return nil, fmt.Errorf("failed create the job queueu")
@@ -42,14 +42,14 @@ func NewJobQueue(name string, runEverySec, seed, dequeueCount int, redisAddr str
 		count:        0,
 	}
 
-	jobQueue.Redis = redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%s:%d", redisAddr, redisPort),
-	})
+	jobQueue.Redis = redis
+
 	return jobQueue, nil
 }
 
 func (jobQueue *JobQueue) ToPB() *pb.JobQueue {
 	return &pb.JobQueue{
+		Id:           jobQueue.Id,
 		Name:         jobQueue.Name,
 		RunEverySec:  int32(jobQueue.RunEvery.Seconds()),
 		Seed:         int32Ptr(jobQueue.Seed),

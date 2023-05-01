@@ -10,13 +10,16 @@ option go_package = "github.com/jerrykhh/job-queue/grpc/pb";
 service JobQueueService {
     rpc Start (JobQueueRequest) returns (JobQueue);
     rpc Pause (JobQueueRequest) returns (JobQueue);
-    rpc Create (JobQueue) returns (CreateJobQueueResponse);
-    rpc List (JobQueueRequest) returns (stream Job);
-    rpc Enqueue (EnqueueRequest) returns (EnqueueResponse);
+    rpc Create (CreateJobQueueRequest) returns (JobQueue);
+    rpc List(EmptyRequest) returns (ListRepsonse);
+    rpc ListJob (JobQueueRequest) returns (stream Job);
+    rpc Enqueue (EnqueueRequest) returns (Job);
     rpc Dequeue (JobQueueRequest) returns (DequeueResponse);
     rpc Remove (JobQueueRequest) returns (JobQueue);
     rpc RemoveJob (RemoveJobRequest) returns (Job);
 }
+
+message EmptyRequest {}
 
 message JobQueueRequest {
     string queue_id = 1;
@@ -26,9 +29,11 @@ message JobRequest {
     string job_id = 1;
 }
 
-message CreateJobQueueResponse {
-    string queue_id = 1;
-    JobQueue job_queue = 2;
+message CreateJobQueueRequest {
+    string name = 2;
+    int32 run_every_sec = 3;
+    optional int32 seed = 4;
+    optional int32 dequeue_count = 5;
 }
 
 message EnqueueRequest {
@@ -38,10 +43,6 @@ message EnqueueRequest {
     optional int32 priority = 4;
 }
 
-message EnqueueResponse {
-    string queue_id = 1;
-    Job job = 2;
-}
 
 message DequeueResponse {
     repeated Job items = 1;
@@ -50,4 +51,8 @@ message DequeueResponse {
 message RemoveJobRequest {
     string queue_id = 1;
     Job job = 2;
+}
+
+message ListRepsonse {
+    repeated JobQueue items = 1;
 }

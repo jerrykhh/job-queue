@@ -1,12 +1,16 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/jerrykhh/job-queue/grpc/pb"
 	server_queue "github.com/jerrykhh/job-queue/server/queue"
 	"github.com/jerrykhh/job-queue/server/utils/jwt"
 	"github.com/jerrykhh/job-queue/server/utils/pwd"
+	"github.com/redis/go-redis/v9"
 )
 
 type Server struct {
@@ -17,6 +21,7 @@ type Server struct {
 	jwtCreator  *jwt.JWTCreator
 	rootHashPwd string
 	queues      map[string]*server_queue.JobQueue
+	redis       *redis.Client
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -40,7 +45,31 @@ func NewServer(config Config) (*Server, error) {
 
 	serv.rootHashPwd = hashPwd
 	serv.queues = make(map[string]*server_queue.JobQueue)
+	serv.redis = redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%d", config.RedisAddress, config.RedisPort),
+	})
+
+	err = serv.LoadQueueFromRedis()
+
+	if err != nil {
+		return nil, err
+	}
+
 	return serv, nil
+
+}
+
+func (server *Server) LoadQueueFromRedis() error {
+	result, err := server.ListJobQueue()
+	if err != nil {
+		return err
+	}
+
+	for _, jobQueue := range result {
+		server.queues[jobQueue.Id] = jobQueue
+	}
+
+	return nil
 
 }
 
@@ -52,11 +81,21 @@ func (server *Server) CompareUsername(name string) error {
 }
 
 func (server *Server) NewJobQueue(name string, runEverySec, seed, dequeueCount int) (*server_queue.JobQueue, error) {
-	newQueue, err := server_queue.NewJobQueue(name, runEverySec, seed, dequeueCount, server.config.RedisAddress, server.config.RedisPort)
+	ctx := context.Background()
+
+	newQueue, err := server_queue.NewJobQueue(name, runEverySec, seed, dequeueCount, server.redis)
 	if err != nil {
 		return nil, err
 	}
 	server.queues[newQueue.Id] = newQueue
+
+	queueJson, err := json.Marshal(newQueue)
+	if err != nil {
+		return nil, err
+	}
+
+	server.redis.RPush(ctx, "job-queue", queueJson).Result()
+
 	return newQueue, nil
 }
 
@@ -73,7 +112,40 @@ func (server *Server) RemoveJobQueue(queueId string) (*server_queue.JobQueue, er
 	if err != nil {
 		return nil, err
 	}
+
+	queueJson, err := json.Marshal(q)
+	if err != nil {
+		return nil, err
+	}
+
+	server.redis.LRem(context.Background(), "job-queue", 1, queueJson).Result()
 	delete(server.queues, queueId)
 
 	return q, nil
+}
+
+func (server *Server) ListJobQueue() ([]*server_queue.JobQueue, error) {
+	ctx := context.Background()
+	result, err := server.redis.LRange(ctx, "job-queue", 0, -1).Result()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load queue data from redis")
+	}
+
+	queues := make([]*server_queue.JobQueue, len(result))
+
+	for i, data := range result {
+		var jobQueue server_queue.JobQueue
+		err := json.Unmarshal([]byte(data), &jobQueue)
+		if err != nil {
+			log.Println(err)
+		}
+
+		queues[i] = &jobQueue
+	}
+	return queues, nil
+}
+
+func (server *Server) TriggerBgSave() error {
+	_, err := server.redis.BgSave(context.Background()).Result()
+	return err
 }

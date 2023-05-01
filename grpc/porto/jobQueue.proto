@@ -5,10 +5,11 @@ package pb;
 option go_package = "github.com/jerrykhh/job-queue/grpc/pb";
 
 message JobQueue {
-    string name = 1;
-    int32 run_every_sec = 2;
-    optional int32 seed = 3;
-    optional int32 dequeue_count = 4;
+    string id = 1;
+    string name = 2;
+    int32 run_every_sec = 3;
+    optional int32 seed = 4;
+    optional int32 dequeue_count = 5;
 }
 
 message Job {

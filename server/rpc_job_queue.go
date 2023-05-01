@@ -21,7 +21,7 @@ func (server *Server) Start(ctx context.Context, req *pb.JobQueueRequest) (*pb.J
 
 }
 
-func (server *Server) List(req *pb.JobQueueRequest, stream pb.JobQueueService_ListServer) error {
+func (server *Server) ListJob(req *pb.JobQueueRequest, stream pb.JobQueueService_ListJobServer) error {
 
 	q, err := server.GetJobQueue(req.GetQueueId())
 
@@ -50,20 +50,17 @@ func (server *Server) List(req *pb.JobQueueRequest, stream pb.JobQueueService_Li
 	return nil
 }
 
-func (server *Server) Create(ctx context.Context, req *pb.JobQueue) (*pb.CreateJobQueueResponse, error) {
+func (server *Server) Create(ctx context.Context, req *pb.CreateJobQueueRequest) (*pb.JobQueue, error) {
 	q, err := server.NewJobQueue(req.GetName(), int(req.GetRunEverySec()), int(req.GetSeed()), int(req.GetDequeueCount()))
 
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to create the new job queue")
 	}
 
-	return &pb.CreateJobQueueResponse{
-		QueueId:  q.Id,
-		JobQueue: q.ToPB(),
-	}, nil
+	return q.ToPB(), nil
 }
 
-func (server *Server) Enqueue(ctx context.Context, req *pb.EnqueueRequest) (*pb.EnqueueResponse, error) {
+func (server *Server) Enqueue(ctx context.Context, req *pb.EnqueueRequest) (*pb.Job, error) {
 	q, err := server.GetJobQueue(req.GetQueueId())
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "queue id not found")
@@ -81,10 +78,7 @@ func (server *Server) Enqueue(ctx context.Context, req *pb.EnqueueRequest) (*pb.
 		return nil, status.Error(codes.Internal, "failed to enqueue new job")
 	}
 
-	return &pb.EnqueueResponse{
-		QueueId: q.Id,
-		Job:     job.ToPB(),
-	}, nil
+	return job.ToPB(), nil
 
 }
 
@@ -148,4 +142,21 @@ func (server *Server) RemoveJob(ctx context.Context, req *pb.RemoveJobRequest) (
 	}
 	return req.GetJob(), nil
 
+}
+
+func (server *Server) List(ctx context.Context, req *pb.EmptyRequest) (*pb.ListRepsonse, error) {
+
+	qs, err := server.ListJobQueue()
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to list queue")
+	}
+
+	pbQueues := make([]*pb.JobQueue, len(qs))
+	for i, queue := range qs {
+		pbQueues[i] = queue.ToPB()
+	}
+
+	return &pb.ListRepsonse{
+		Items: pbQueues,
+	}, nil
 }
