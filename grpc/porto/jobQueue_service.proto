@@ -11,11 +11,11 @@ service JobQueueService {
     rpc Start (JobQueueRequest) returns (JobQueue);
     rpc Pause (JobQueueRequest) returns (JobQueue);
     rpc Create (JobQueue) returns (CreateJobQueueResponse);
-    rpc List (JobQueueRequest) returns (stream ListJobResponse);
+    rpc List (JobQueueRequest) returns (stream Job);
     rpc Enqueue (EnqueueRequest) returns (EnqueueResponse);
     rpc Dequeue (JobQueueRequest) returns (DequeueResponse);
     rpc Remove (JobQueueRequest) returns (JobQueue);
-    rpc RemoveJob (JobRequest) returns (Job);
+    rpc RemoveJob (RemoveJobRequest) returns (Job);
 }
 
 message JobQueueRequest {
@@ -31,22 +31,23 @@ message CreateJobQueueResponse {
     JobQueue job_queue = 2;
 }
 
-message ListJobResponse {
-    Job job = 1; 
-}
-
 message EnqueueRequest {
     string queue_id = 1;
-    Job job = 2;
+    string script = 2;
+    string parma = 3;
+    optional int32 priority = 4;
 }
 
 message EnqueueResponse {
     string queue_id = 1;
-    string job_id = 2;
-    Job job = 3;
+    Job job = 2;
 }
 
 message DequeueResponse {
     repeated Job items = 1;
 }
 
+message RemoveJobRequest {
+    string queue_id = 1;
+    Job job = 2;
+}

@@ -12,7 +12,12 @@ import (
 
 func (server *Server) Login(ctx context.Context, req *pb.User) (*pb.LoginResponse, error) {
 
-	err := pwd.ComparePwd(server.rootHashPwd, req.GetPassword())
+	err := server.CompareUsername(req.GetUsername())
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, err.Error())
+	}
+
+	err = pwd.ComparePwd(server.rootHashPwd, req.GetPassword())
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "incorrect password")
 	}

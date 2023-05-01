@@ -12,7 +12,8 @@ message JobQueue {
 }
 
 message Job {
-    string script = 1;
-    string parma = 2;
-    optional int32 priority = 3;
+    string id = 1;
+    string script = 2;
+    string parma = 3;
+    optional int32 priority = 4;
 }

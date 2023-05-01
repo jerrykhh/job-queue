@@ -40,7 +40,7 @@ type JobQueueServiceClient interface {
 	Enqueue(ctx context.Context, in *EnqueueRequest, opts ...grpc.CallOption) (*EnqueueResponse, error)
 	Dequeue(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*DequeueResponse, error)
 	Remove(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*JobQueue, error)
-	RemoveJob(ctx context.Context, in *JobRequest, opts ...grpc.CallOption) (*Job, error)
+	RemoveJob(ctx context.Context, in *RemoveJobRequest, opts ...grpc.CallOption) (*Job, error)
 }
 
 type jobQueueServiceClient struct {
@@ -94,7 +94,7 @@ func (c *jobQueueServiceClient) List(ctx context.Context, in *JobQueueRequest, o
 }
 
 type JobQueueService_ListClient interface {
-	Recv() (*ListJobResponse, error)
+	Recv() (*Job, error)
 	grpc.ClientStream
 }
 
@@ -102,8 +102,8 @@ type jobQueueServiceListClient struct {
 	grpc.ClientStream
 }
 
-func (x *jobQueueServiceListClient) Recv() (*ListJobResponse, error) {
-	m := new(ListJobResponse)
+func (x *jobQueueServiceListClient) Recv() (*Job, error) {
+	m := new(Job)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (c *jobQueueServiceClient) Remove(ctx context.Context, in *JobQueueRequest,
 	return out, nil
 }
 
-func (c *jobQueueServiceClient) RemoveJob(ctx context.Context, in *JobRequest, opts ...grpc.CallOption) (*Job, error) {
+func (c *jobQueueServiceClient) RemoveJob(ctx context.Context, in *RemoveJobRequest, opts ...grpc.CallOption) (*Job, error) {
 	out := new(Job)
 	err := c.cc.Invoke(ctx, JobQueueService_RemoveJob_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -157,7 +157,7 @@ type JobQueueServiceServer interface {
 	Enqueue(context.Context, *EnqueueRequest) (*EnqueueResponse, error)
 	Dequeue(context.Context, *JobQueueRequest) (*DequeueResponse, error)
 	Remove(context.Context, *JobQueueRequest) (*JobQueue, error)
-	RemoveJob(context.Context, *JobRequest) (*Job, error)
+	RemoveJob(context.Context, *RemoveJobRequest) (*Job, error)
 	mustEmbedUnimplementedJobQueueServiceServer()
 }
 
@@ -186,7 +186,7 @@ func (UnimplementedJobQueueServiceServer) Dequeue(context.Context, *JobQueueRequ
 func (UnimplementedJobQueueServiceServer) Remove(context.Context, *JobQueueRequest) (*JobQueue, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Remove not implemented")
 }
-func (UnimplementedJobQueueServiceServer) RemoveJob(context.Context, *JobRequest) (*Job, error) {
+func (UnimplementedJobQueueServiceServer) RemoveJob(context.Context, *RemoveJobRequest) (*Job, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveJob not implemented")
 }
 func (UnimplementedJobQueueServiceServer) mustEmbedUnimplementedJobQueueServiceServer() {}
@@ -265,7 +265,7 @@ func _JobQueueService_List_Handler(srv interface{}, stream grpc.ServerStream) er
 }
 
 type JobQueueService_ListServer interface {
-	Send(*ListJobResponse) error
+	Send(*Job) error
 	grpc.ServerStream
 }
 
@@ -273,7 +273,7 @@ type jobQueueServiceListServer struct {
 	grpc.ServerStream
 }
 
-func (x *jobQueueServiceListServer) Send(m *ListJobResponse) error {
+func (x *jobQueueServiceListServer) Send(m *Job) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -332,7 +332,7 @@ func _JobQueueService_Remove_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _JobQueueService_RemoveJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobRequest)
+	in := new(RemoveJobRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func _JobQueueService_RemoveJob_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: JobQueueService_RemoveJob_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(JobQueueServiceServer).RemoveJob(ctx, req.(*JobRequest))
+		return srv.(JobQueueServiceServer).RemoveJob(ctx, req.(*RemoveJobRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
