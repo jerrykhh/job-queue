@@ -35,7 +35,8 @@ func (jwtCreator *JWTCreator) CreateToken(username string, duration time.Duratio
 }
 
 func (jwtCreator *JWTCreator) VerifyToken(token string) (jwt.Claims, error) {
-	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+	claims := &Payload{}
+	parsedToken, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrSignatureInvalid
 		}
@@ -46,9 +47,9 @@ func (jwtCreator *JWTCreator) VerifyToken(token string) (jwt.Claims, error) {
 		return nil, err
 	}
 
-	if claims, ok := parsedToken.Claims.(Payload); ok && parsedToken.Valid {
+	if ok := parsedToken.Valid; ok {
 		return claims, nil
 	}
 
-	return nil, parsedToken.Claims.Valid()
+	return nil, fmt.Errorf("parsed token is invalid")
 }

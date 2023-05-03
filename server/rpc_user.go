@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	pb "github.com/jerrykhh/job-queue/grpc/pb"
 	"github.com/jerrykhh/job-queue/server/utils/pwd"
@@ -36,7 +37,7 @@ func (server *Server) Login(ctx context.Context, req *pb.User) (*pb.LoginRespons
 		Username:          req.GetUsername(),
 		AccessToken:       accessToken,
 		RefreshToken:      refreshToken,
-		AccessTokenExpAt:  timestamppb.New(accessPayload.ExpiresAt),
-		RefreshTokenExpAt: timestamppb.New(refeshPayload.ExpiresAt),
+		AccessTokenExpAt:  timestamppb.New(time.Unix(accessPayload.ExpiresAt, 0)),
+		RefreshTokenExpAt: timestamppb.New(time.Unix(refeshPayload.ExpiresAt, 0)),
 	}, nil
 }

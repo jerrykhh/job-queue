@@ -9,7 +9,6 @@ import (
 type Config struct {
 	RedisAddress         string        `mapstructure:"REDIS_ADDRESS"`
 	RedisPort            int           `mapstructure:"REDIS_PORT"`
-	RedisQueue           bool          `mapstructure:"REDIS_QUEUE"`
 	TokenHashKey         string        `mapstructure:"TOKEN_HASH_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDueation time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
@@ -19,8 +18,8 @@ type Config struct {
 }
 
 func LoadConfig(path string) (config Config, err error) {
-	viper.AddConfigPath(path)
-	viper.SetConfigFile(".env")
+	// viper.AddConfigPath()
+	viper.SetConfigFile(path)
 	err = viper.ReadInConfig()
 	err = viper.Unmarshal(&config)
 	return

@@ -11,6 +11,8 @@ import (
 	"github.com/jerrykhh/job-queue/server/utils/jwt"
 	"github.com/jerrykhh/job-queue/server/utils/pwd"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 type Server struct {
@@ -22,6 +24,9 @@ type Server struct {
 	rootHashPwd string
 	queues      map[string]*server_queue.JobQueue
 	redis       *redis.Client
+
+	// server
+	Lis *bufconn.Listener
 }
 
 func NewServer(config Config) (*Server, error) {
@@ -35,6 +40,7 @@ func NewServer(config Config) (*Server, error) {
 	serv := &Server{
 		config:     config,
 		jwtCreator: jwtTokenCreator,
+		Lis:        bufconn.Listen(1024 * 1024),
 	}
 
 	hashPwd, err := pwd.HashPassword(config.RootPwd)
@@ -57,6 +63,27 @@ func NewServer(config Config) (*Server, error) {
 
 	return serv, nil
 
+}
+
+func (server *Server) RunGrpcServer() (*grpc.Server, func()) {
+	grpcServer := grpc.NewServer()
+	pb.RegisterJobQueueServiceServer(grpcServer, server)
+	pb.RegisterUserServiceServer(grpcServer, server)
+	go func() {
+		if err := grpcServer.Serve(server.Lis); err != nil {
+			fmt.Printf("error servinf server: %v", err)
+		}
+	}()
+
+	closeFunc := func() {
+		err := server.Lis.Close()
+		if err != nil {
+			fmt.Printf("error closing listener: %v\n", err)
+		}
+		grpcServer.Stop()
+	}
+
+	return grpcServer, closeFunc
 }
 
 func (server *Server) LoadQueueFromRedis() error {

@@ -9,11 +9,8 @@ import (
 )
 
 type Payload struct {
-	Id        string
-	Username  string
-	IssuedAt  time.Time
-	ExpiresAt time.Time
 	jwt.StandardClaims
+	Username string
 }
 
 func NewPayload(username string, duration time.Duration) (*Payload, error) {
@@ -23,9 +20,15 @@ func NewPayload(username string, duration time.Duration) (*Payload, error) {
 	}
 
 	return &Payload{
-		Id:        id.String(),
-		Username:  username,
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(duration),
+		Username: username,
+		StandardClaims: jwt.StandardClaims{
+			Id:        id.String(),
+			ExpiresAt: time.Now().Add(duration).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
 	}, nil
+}
+
+func (p *Payload) Valid() error {
+	return p.StandardClaims.Valid()
 }
