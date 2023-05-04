@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -11,13 +10,16 @@ import (
 )
 
 func main() {
-	flag.Parse()
 	config, err := server.LoadConfig(".env")
 	if err != nil {
 		fmt.Println("load config file failed")
 		log.Fatalln(err)
 	}
-	runGrpcServer(config)
+	fmt.Println("run")
+	err = runGrpcServer(config)
+	if err != nil {
+		error.Error(err)
+	}
 }
 
 func runGrpcServer(config server.Config) error {
@@ -27,9 +29,8 @@ func runGrpcServer(config server.Config) error {
 	}
 
 	// gprcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
-	grpcServer, closeFunc := serv.RunGrpcServer()
-	defer closeFunc()
-
+	grpcServer, _ := serv.RunGrpcServer()
+	//defer closeFunc()
 	reflection.Register(grpcServer)
 	listener, err := net.Listen("tcp", config.GRPCServerAddress)
 	if err != nil {

@@ -17,7 +17,7 @@ type JobQueue struct {
 	pb.JobQueue
 	Id              string
 	Name            string
-	RunEvery        time.Duration
+	RunEverySec     time.Duration
 	Seed            int
 	DequeueCount    int
 	count           int
@@ -35,7 +35,7 @@ func NewJobQueue(name string, runEverySec, seed, dequeueCount int, redis *redis.
 	jobQueue := &JobQueue{
 		Id:           id.String(),
 		Name:         name,
-		RunEvery:     time.Duration(runEverySec),
+		RunEverySec:  time.Duration(runEverySec),
 		Seed:         seed,
 		DequeueCount: dequeueCount,
 		Pause:        false,
@@ -51,7 +51,7 @@ func (jobQueue *JobQueue) ToPB() *pb.JobQueue {
 	return &pb.JobQueue{
 		Id:           jobQueue.Id,
 		Name:         jobQueue.Name,
-		RunEverySec:  int32(jobQueue.RunEvery.Seconds()),
+		RunEverySec:  int32(jobQueue.RunEverySec),
 		Seed:         int32Ptr(jobQueue.Seed),
 		DequeueCount: int32Ptr(jobQueue.DequeueCount),
 	}
@@ -90,8 +90,8 @@ func (queue *JobQueue) Start(seed int64) {
 				queue.PerviousRunTime = time.Now()
 			}
 		}
-		fmt.Println((queue.RunEvery + time.Duration(bias)))
-		time.Sleep((queue.RunEvery + time.Duration(bias)) * time.Second)
+		fmt.Println((queue.RunEverySec + time.Duration(bias)))
+		time.Sleep((queue.RunEverySec + time.Duration(bias)) * time.Second)
 
 	}
 }

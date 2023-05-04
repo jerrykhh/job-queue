@@ -38,7 +38,7 @@ type JobQueueServiceClient interface {
 	Pause(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*JobQueue, error)
 	Create(ctx context.Context, in *CreateJobQueueRequest, opts ...grpc.CallOption) (*JobQueue, error)
 	List(ctx context.Context, in *EmptyRequest, opts ...grpc.CallOption) (*ListRepsonse, error)
-	ListJob(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (JobQueueService_ListJobClient, error)
+	ListJob(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*ListJobRepsonse, error)
 	Enqueue(ctx context.Context, in *EnqueueRequest, opts ...grpc.CallOption) (*Job, error)
 	Dequeue(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*DequeueResponse, error)
 	Remove(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*JobQueue, error)
@@ -89,36 +89,13 @@ func (c *jobQueueServiceClient) List(ctx context.Context, in *EmptyRequest, opts
 	return out, nil
 }
 
-func (c *jobQueueServiceClient) ListJob(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (JobQueueService_ListJobClient, error) {
-	stream, err := c.cc.NewStream(ctx, &JobQueueService_ServiceDesc.Streams[0], JobQueueService_ListJob_FullMethodName, opts...)
+func (c *jobQueueServiceClient) ListJob(ctx context.Context, in *JobQueueRequest, opts ...grpc.CallOption) (*ListJobRepsonse, error) {
+	out := new(ListJobRepsonse)
+	err := c.cc.Invoke(ctx, JobQueueService_ListJob_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &jobQueueServiceListJobClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type JobQueueService_ListJobClient interface {
-	Recv() (*Job, error)
-	grpc.ClientStream
-}
-
-type jobQueueServiceListJobClient struct {
-	grpc.ClientStream
-}
-
-func (x *jobQueueServiceListJobClient) Recv() (*Job, error) {
-	m := new(Job)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 func (c *jobQueueServiceClient) Enqueue(ctx context.Context, in *EnqueueRequest, opts ...grpc.CallOption) (*Job, error) {
@@ -165,7 +142,7 @@ type JobQueueServiceServer interface {
 	Pause(context.Context, *JobQueueRequest) (*JobQueue, error)
 	Create(context.Context, *CreateJobQueueRequest) (*JobQueue, error)
 	List(context.Context, *EmptyRequest) (*ListRepsonse, error)
-	ListJob(*JobQueueRequest, JobQueueService_ListJobServer) error
+	ListJob(context.Context, *JobQueueRequest) (*ListJobRepsonse, error)
 	Enqueue(context.Context, *EnqueueRequest) (*Job, error)
 	Dequeue(context.Context, *JobQueueRequest) (*DequeueResponse, error)
 	Remove(context.Context, *JobQueueRequest) (*JobQueue, error)
@@ -189,8 +166,8 @@ func (UnimplementedJobQueueServiceServer) Create(context.Context, *CreateJobQueu
 func (UnimplementedJobQueueServiceServer) List(context.Context, *EmptyRequest) (*ListRepsonse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method List not implemented")
 }
-func (UnimplementedJobQueueServiceServer) ListJob(*JobQueueRequest, JobQueueService_ListJobServer) error {
-	return status.Errorf(codes.Unimplemented, "method ListJob not implemented")
+func (UnimplementedJobQueueServiceServer) ListJob(context.Context, *JobQueueRequest) (*ListJobRepsonse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListJob not implemented")
 }
 func (UnimplementedJobQueueServiceServer) Enqueue(context.Context, *EnqueueRequest) (*Job, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Enqueue not implemented")
@@ -289,25 +266,22 @@ func _JobQueueService_List_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
-func _JobQueueService_ListJob_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(JobQueueRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _JobQueueService_ListJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobQueueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(JobQueueServiceServer).ListJob(m, &jobQueueServiceListJobServer{stream})
-}
-
-type JobQueueService_ListJobServer interface {
-	Send(*Job) error
-	grpc.ServerStream
-}
-
-type jobQueueServiceListJobServer struct {
-	grpc.ServerStream
-}
-
-func (x *jobQueueServiceListJobServer) Send(m *Job) error {
-	return x.ServerStream.SendMsg(m)
+	if interceptor == nil {
+		return srv.(JobQueueServiceServer).ListJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: JobQueueService_ListJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(JobQueueServiceServer).ListJob(ctx, req.(*JobQueueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _JobQueueService_Enqueue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -406,6 +380,10 @@ var JobQueueService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _JobQueueService_List_Handler,
 		},
 		{
+			MethodName: "ListJob",
+			Handler:    _JobQueueService_ListJob_Handler,
+		},
+		{
 			MethodName: "Enqueue",
 			Handler:    _JobQueueService_Enqueue_Handler,
 		},
@@ -422,12 +400,6 @@ var JobQueueService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _JobQueueService_RemoveJob_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "ListJob",
-			Handler:       _JobQueueService_ListJob_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "jobQueue_service.proto",
 }

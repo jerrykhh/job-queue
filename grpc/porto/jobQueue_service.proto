@@ -12,7 +12,7 @@ service JobQueueService {
     rpc Pause (JobQueueRequest) returns (JobQueue);
     rpc Create (CreateJobQueueRequest) returns (JobQueue);
     rpc List(EmptyRequest) returns (ListRepsonse);
-    rpc ListJob (JobQueueRequest) returns (stream Job);
+    rpc ListJob (JobQueueRequest) returns (ListJobRepsonse);
     rpc Enqueue (EnqueueRequest) returns (Job);
     rpc Dequeue (JobQueueRequest) returns (DequeueResponse);
     rpc Remove (JobQueueRequest) returns (JobQueue);
@@ -55,4 +55,8 @@ message RemoveJobRequest {
 
 message ListRepsonse {
     repeated JobQueue items = 1;
+}
+
+message ListJobRepsonse {
+    repeated Job items = 1;
 }

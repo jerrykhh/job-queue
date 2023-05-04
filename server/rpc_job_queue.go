@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"fmt"
 
 	pb "github.com/jerrykhh/job-queue/grpc/pb"
 	server_queue "github.com/jerrykhh/job-queue/server/queue"
@@ -21,33 +21,47 @@ func (server *Server) Start(ctx context.Context, req *pb.JobQueueRequest) (*pb.J
 
 }
 
-func (server *Server) ListJob(req *pb.JobQueueRequest, stream pb.JobQueueService_ListJobServer) error {
+func (server *Server) ListJob(ctx context.Context, req *pb.JobQueueRequest) (*pb.ListJobRepsonse, error) {
 
 	q, err := server.GetJobQueue(req.GetQueueId())
 
 	if err != nil {
-		return status.Error(codes.NotFound, "queue id not found")
+		return nil, status.Error(codes.NotFound, "queue id not found")
 	}
 
 	results, err := q.List()
 	if err != nil {
-		return status.Error(codes.Internal, "failed to get List Queue")
+		return nil, status.Error(codes.Internal, "failed to get List Queue")
 	}
 
-	for _, result := range results {
-		jobJSON := result.Member.(string)
-		var job server_queue.Job
+	jobs := make([]*pb.Job, len(results))
 
+	for i, result := range results {
+		jobJSON := result.Member.(string)
+		var job *server_queue.Job
 		err := json.Unmarshal([]byte(jobJSON), &job)
 		if err != nil {
-			log.Println(err)
+			return nil, status.Error(codes.Internal, "failed to convert the string to JSON object")
 		}
-
-		if err := stream.Send(job.ToPB()); err != nil {
-			return err
-		}
+		jobs[i] = job.ToPB()
 	}
-	return nil
+	return &pb.ListJobRepsonse{
+		Items: jobs,
+	}, nil
+
+	// for _, result := range results {
+	// 	jobJSON := result.Member.(string)
+	// 	var job server_queue.Job
+
+	// 	err := json.Unmarshal([]byte(jobJSON), &job)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
+
+	// 	if err := stream.Send(job.ToPB()); err != nil {
+	// 		return err
+	// 	}
+	// }
 }
 
 func (server *Server) Create(ctx context.Context, req *pb.CreateJobQueueRequest) (*pb.JobQueue, error) {
@@ -56,7 +70,7 @@ func (server *Server) Create(ctx context.Context, req *pb.CreateJobQueueRequest)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to create the new job queue")
 	}
-
+	fmt.Println(q.ToPB())
 	return q.ToPB(), nil
 }
 
@@ -124,7 +138,7 @@ func (server *Server) Remove(ctx context.Context, req *pb.JobQueueRequest) (*pb.
 }
 
 func (server *Server) RemoveJob(ctx context.Context, req *pb.RemoveJobRequest) (*pb.Job, error) {
-	q, err := server.RemoveJobQueue(req.GetQueueId())
+	q, err := server.GetJobQueue(req.GetQueueId())
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "queue id not found")
 	}

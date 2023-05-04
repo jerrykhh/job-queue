@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var client pb.UserServiceClient
+var userClient pb.UserServiceClient
 
 func init() {
-	client = ConnUserServer()
+	userClient = ConnUserServer()
 }
 
 func TestLogin(t *testing.T) {
-	res, err := client.Login(context.Background(), &pb.User{
+	res, err := userClient.Login(context.Background(), &pb.User{
 		Username: "root",
 		Password: "test",
 	})
@@ -24,7 +24,7 @@ func TestLogin(t *testing.T) {
 }
 
 func TestLoginIncorrectPwd(t *testing.T) {
-	_, err := client.Login(context.Background(), &pb.User{
+	_, err := userClient.Login(context.Background(), &pb.User{
 		Username: "root",
 		Password: "",
 	})
@@ -32,7 +32,7 @@ func TestLoginIncorrectPwd(t *testing.T) {
 }
 
 func TestLoginIncorrectUsername(t *testing.T) {
-	_, err := client.Login(context.Background(), &pb.User{
+	_, err := userClient.Login(context.Background(), &pb.User{
 		Username: "a",
 		Password: "test",
 	})

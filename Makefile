@@ -9,3 +9,6 @@ proto:
 
 evans:
 	evans --host 127.0.0.1 --port 9090 -r repl
+
+test:
+	go test -v ./test

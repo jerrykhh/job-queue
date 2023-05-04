@@ -41,7 +41,7 @@ func ConnServer() *grpc.ClientConn {
 
 func ConnJobqueueServer() pb.JobQueueServiceClient {
 	conn := ConnServer()
-	defer conn.Close()
+	// defer conn.Close()
 	client := pb.NewJobQueueServiceClient(conn)
 	return client
 }
@@ -51,4 +51,9 @@ func ConnUserServer() pb.UserServiceClient {
 	// defer conn.Close()
 	client := pb.NewUserServiceClient(conn)
 	return client
+}
+
+func int32Ptr(v int) *int32 {
+	p := int32(v)
+	return &p
 }
