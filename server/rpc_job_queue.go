@@ -130,6 +130,7 @@ func (server *Server) Pause(ctx context.Context, req *pb.JobQueueRequest) (*pb.J
 
 func (server *Server) Remove(ctx context.Context, req *pb.JobQueueRequest) (*pb.JobQueue, error) {
 	q, err := server.RemoveJobQueue(req.GetQueueId())
+
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "queue id not found")
 	}

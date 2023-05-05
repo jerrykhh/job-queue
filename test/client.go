@@ -19,16 +19,16 @@ func init() {
 
 func ConnServer() *grpc.ClientConn {
 	config, err := server.LoadConfig("../.env")
-	// if err != nil {
-	// 	fmt.Println("read .env failed")
-	// }
+	if err != nil {
+		fmt.Println("read .env failed")
+	}
 	// serv, err := server.NewServer(config)
 	// if err != nil {
 	// 	fmt.Println("failed to New Server")
 	// }
 	// _, closeFunc := serv.RunGrpcServer()
 	fmt.Println(config.GRPCServerAddress)
-	fmt.Println("config")
+	fmt.Println("ConnServer")
 	// dialAddr := config.GRPCServerAddress
 
 	conn, err := grpc.Dial(config.GRPCServerAddress, grpc.WithInsecure(), grpc.WithBlock())

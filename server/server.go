@@ -136,6 +136,7 @@ func (server *Server) GetJobQueue(queueId string) (*server_queue.JobQueue, error
 
 func (server *Server) RemoveJobQueue(queueId string) (*server_queue.JobQueue, error) {
 	q, err := server.GetJobQueue(queueId)
+
 	if err != nil {
 		return nil, err
 	}
@@ -146,6 +147,7 @@ func (server *Server) RemoveJobQueue(queueId string) (*server_queue.JobQueue, er
 	}
 
 	server.redis.LRem(context.Background(), "job-queue", 1, queueJson).Result()
+	q.Pause = true
 	delete(server.queues, queueId)
 
 	return q, nil

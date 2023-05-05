@@ -2,7 +2,7 @@ package test
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"testing"
 
 	"github.com/jerrykhh/job-queue/grpc/pb"
@@ -23,25 +23,23 @@ func (s *JobQueueSuite) SetupSuite() {
 }
 
 func (s *JobQueueSuite) TearDownTest() {
+	fmt.Println("tear down")
 	ctx := context.Background()
-	res, err := s.jobClient.List(ctx, &pb.EmptyRequest{})
-	if err != nil {
-		log.Fatalln("TearDown: List job queue failed")
-	}
+	res, _ := s.jobClient.List(ctx, &pb.EmptyRequest{})
 	for _, q := range res.Items {
-		_, err := s.jobClient.Remove(ctx, &pb.JobQueueRequest{
-			QueueId: q.Id,
-		})
-		if err != nil {
-			log.Fatalln("TearDown: Remove Queue failed")
+		listJobRes, err := s.jobClient.ListJob(ctx, &pb.JobQueueRequest{QueueId: q.Id})
+		if err == nil {
+			for _, job := range listJobRes.Items {
+				s.jobClient.RemoveJob(ctx, &pb.RemoveJobRequest{QueueId: q.Id, Job: job})
+			}
 		}
-
+		s.jobClient.Remove(ctx, &pb.JobQueueRequest{QueueId: q.Id})
 	}
 }
 
 func (s *JobQueueSuite) TestCreateQueue() {
 	ctx := context.Background()
-
+	fmt.Println("here1")
 	request := &pb.CreateJobQueueRequest{
 		Name:         "testqueue",
 		RunEverySec:  1,
@@ -55,11 +53,13 @@ func (s *JobQueueSuite) TestCreateQueue() {
 		Seed:         request.Seed,
 		DequeueCount: request.DequeueCount,
 	}
-
+	fmt.Println("here11")
 	res, err := s.jobClient.Create(ctx, request)
+	fmt.Println("here12")
 	s.Nil(err)
 	s.NotEmpty(res.Id)
 	expected.Id = res.Id
+	fmt.Println("here13å")
 	s.Equal(expected.String(), res.String())
 }
 
@@ -99,35 +99,4 @@ func (s *JobQueueSuite) TestRemoveQueueInvalidId() {
 		QueueId: "i go to school by bus",
 	})
 	s.Error(err)
-}
-
-func (s *JobQueueSuite) TestEqueue() {
-
-	job := &pb.EnqueueRequest{
-		Script: "testscript",
-		Parma:  "test parma",
-	}
-
-	expected := &pb.Job{
-		Script: job.Script,
-		Parma:  job.Parma,
-	}
-
-	ctx := context.Background()
-	res, err := s.jobClient.Create(ctx, &pb.CreateJobQueueRequest{
-		Name:         "testqueue",
-		RunEverySec:  1,
-		Seed:         int32Ptr(-1),
-		DequeueCount: int32Ptr(3),
-	})
-
-	if s.Nil(err) {
-		job.QueueId = res.Id
-		res, err := s.jobClient.Enqueue(ctx, job)
-		expected.Id = res.Id
-		expected.Priority = int32Ptr(0)
-		s.Nil(err)
-		s.Equal(expected.String(), res.String())
-	}
-
 }

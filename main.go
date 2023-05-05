@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"github.com/jerrykhh/job-queue/server"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -31,7 +30,7 @@ func runGrpcServer(config server.Config) error {
 	// gprcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
 	grpcServer, _ := serv.RunGrpcServer()
 	//defer closeFunc()
-	reflection.Register(grpcServer)
+	// reflection.Register(grpcServer)
 	listener, err := net.Listen("tcp", config.GRPCServerAddress)
 	if err != nil {
 		return err

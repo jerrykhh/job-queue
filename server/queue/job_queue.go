@@ -150,6 +150,7 @@ func (queue *JobQueue) Dequeue() ([]*Job, error) {
 		}
 		queue.count--
 	}
+
 	return jobs, nil
 }
 
