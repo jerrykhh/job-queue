@@ -36,7 +36,7 @@ jobs:
         run: cp ./test/env.txt ./.env
 
       - name: Build and Start Container
-        run: docker-compose -f up -d
+        run: docker-compose -f "docker-compose.yml" up -d --build
 
       - name: Run Tests
         run: go test -v ./test
