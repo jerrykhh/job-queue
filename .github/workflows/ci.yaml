@@ -14,14 +14,14 @@ jobs:
           - go-version: 1.19
       max-parallel: 3
 
-    services:
-      redis:
-        image: redis
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # services:
+    #   redis:
+    #     image: redis
+    #     options: >-
+    #       --health-cmd "redis-cli ping"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
 
     steps:
       - name: Check out repository code
@@ -35,11 +35,8 @@ jobs:
       - name: Setup Env
         run: cp ./test/env.txt ./.env
 
-      - name: Build
-        run: go build -v -o job-queue ./
+      - name: Build and Start Container
+        run: docker-compose -f up -d
 
-      - name: Start Grpc Server & Run Tests
-        run: |
-          ./job-queue &
-          sleep 10
-          go test -v ./test
+      - name: Run Tests
+        run: go test -v ./test

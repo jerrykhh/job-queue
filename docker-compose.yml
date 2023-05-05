@@ -1,0 +1,13 @@
+version: '3.3'
+
+services:
+  grpc_server:
+    build: .
+    ports:
+      - 9090:9090
+    depends_on:
+      - redis
+  redis:
+    image: redis:alpine3.17
+    ports:
+      - 6379:6379
